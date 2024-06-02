@@ -6,6 +6,9 @@ import cors from "cors";
 import simpleGit from "simple-git";
 import { generate } from "./utils";
 import { getAllFiles } from "./file";
+import { createClient } from "redis";
+const publisher = createClient();
+publisher.connect();
 
 import path from "path";
 import { uploadFile } from "./aws";
@@ -37,6 +40,7 @@ app.post("/deploy", async (req, res) => {
   });
 
   //publish in redis queue
+  publisher.lPush("build-queue", id);
 
   res.json({
     id: id,
