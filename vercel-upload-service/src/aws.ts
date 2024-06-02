@@ -19,5 +19,4 @@ export const uploadFile = async (fileName: string, localFilePath: string) => {
       Key: fileName,
     })
     .promise();
-  console.log(response);
 };

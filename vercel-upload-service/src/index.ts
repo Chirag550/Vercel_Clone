@@ -28,15 +28,23 @@ app.post("/deploy", async (req, res) => {
   console.log(__dirname);
 
   //clone a git repo in local
-  await simpleGit().clone(repoUrl, path.join(__dirname, `\output\${id}`));
+  await simpleGit().clone(repoUrl, path.join(__dirname, `output/${id}`));
 
   //get all files path for uploading in s3
 
-  const files = getAllFiles(path.join(__dirname, `\output\${id}`));
+  const files = getAllFiles(path.join(__dirname, `output/${id}`));
+  console.log(files);
 
   //upload to s3(aws)
+
+  console.log("Upload");
   files.forEach(async (file) => {
-    await uploadFile(file.slice(__dirname.length + 1), file);
+    console.log(file);
+    console.log(file.slice(__dirname.length + 1).replace(/\\/g, "/"));
+    await uploadFile(
+      file.slice(__dirname.length + 1).replace(/\\/g, "/"),
+      file
+    );
   });
 
   //publish in redis queue

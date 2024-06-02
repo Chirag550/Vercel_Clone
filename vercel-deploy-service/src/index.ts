@@ -1,8 +1,10 @@
 import { createClient, commandOptions } from "redis";
-import { downloadS3Folder } from "./aws";
+import { copyFinalDist, downloadS3Folder } from "./aws";
+import { buildProject } from "./utils";
 
 const subscriber = createClient();
 subscriber.connect();
+console.log("Entered in Deploy Service ");
 
 async function main() {
   while (1) {
@@ -12,9 +14,12 @@ async function main() {
       0
     );
     // @ts-ignore;
-    const id = res.element;
+    const id = res.element as string;
+    console.log(id);
 
     await downloadS3Folder(`output/${id}`);
+    await buildProject(id);
+    copyFinalDist(id);
   }
 }
 main();
