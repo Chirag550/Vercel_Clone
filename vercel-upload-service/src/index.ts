@@ -28,11 +28,11 @@ app.post("/deploy", async (req, res) => {
   console.log(__dirname);
 
   //clone a git repo in local
-  await simpleGit().clone(repoUrl, path.join(__dirname, `output/${id}`));
+  await simpleGit().clone(repoUrl, path.join(__dirname, `\output\${id}`));
 
   //get all files path for uploading in s3
 
-  const files = getAllFiles(path.join(__dirname, `output/${id}`));
+  const files = getAllFiles(path.join(__dirname, `\output\${id}`));
 
   //upload to s3(aws)
   files.forEach(async (file) => {
