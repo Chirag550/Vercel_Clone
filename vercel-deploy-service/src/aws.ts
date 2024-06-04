@@ -10,20 +10,39 @@ const s3 = new S3({
 });
 
 // output/asdasd
-export async function downloadS3Folder(prefix: string) {
-  console.log(prefix);
+
+function delay(ms: any) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function listObjectsWithDelay(bucket: any, prefix: any, delayTime: any) {
+  // Add delay
+  await delay(delayTime);
+
+  // List objects
   const allFiles = await s3
     .listObjectsV2({
-      Bucket: "vercel",
+      Bucket: bucket,
       Prefix: prefix,
     })
     .promise();
-  console.log("in download s3 folder");
-  console.log(allFiles);
-  //
-  const allPromises =
-    allFiles.Contents?.map(async ({ Key }) => {
-      return new Promise(async (resolve) => {
+
+  return allFiles;
+}
+export async function downloadS3Folder(prefix: string) {
+  try {
+    const allFiles = await listObjectsWithDelay("vercel", prefix, 10000);
+
+    console.log("in download s3 folder");
+    console.log("All Files: ", JSON.stringify(allFiles, null, 2));
+
+    if (!allFiles.Contents || allFiles.Contents.length === 0) {
+      console.log("No files found for the given prefix.");
+      return;
+    }
+
+    const allPromises = allFiles.Contents.map(async ({ Key }) => {
+      return new Promise((resolve, reject) => {
         if (!Key) {
           resolve("");
           return;
@@ -42,21 +61,30 @@ export async function downloadS3Folder(prefix: string) {
           .pipe(outputFile)
           .on("finish", () => {
             resolve("");
+          })
+          .on("error", (err) => {
+            console.error(`Error downloading file ${Key}:`, err);
+            reject(err);
           });
       });
-    }) || [];
-  console.log("awaiting");
+    });
 
-  await Promise.all(allPromises?.filter((x) => x !== undefined));
-  console.log("Downloaded");
+    console.log("Awaiting promises...");
+
+    await Promise.all(allPromises);
+
+    console.log("Downloaded");
+  } catch (err) {
+    console.error("Error in listObjectsV2:", err);
+  }
 }
 
 export function copyFinalDist(id: string) {
-  const folderPath = path.join(__dirname, `output/${id}/dist`);
+  const folderPath = path.join(__dirname, `output/${id}/build`);
   const allFiles = getAllFiles(folderPath);
   allFiles.forEach((file) => {
     uploadFile(
-      (`dist\\${id}\\` + file.slice(folderPath.length + 1)).replace(/\\/g, "/"),
+      (`dist/${id}/` + file.slice(folderPath.length + 1)).replace(/\\/g, "/"),
       file
     );
   });
